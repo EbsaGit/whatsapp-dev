@@ -1,1 +1,10 @@
-/* You can add global styles to this file, and also import other style files */
+/* styles.css (global) */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+#app {
+    display: flex;
+    height: 100vh;
+}
