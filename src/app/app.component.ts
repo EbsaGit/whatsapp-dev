@@ -18,7 +18,7 @@ export class AppComponent implements OnInit {
   currentChat: any = null;
   currentPage: number = 1;
   limit: number = 20;
-  accessToken: string = "EAAQ1oGRqNv8BO9ZAS8LU75d5mHNu6Tj9wizDMZBty4SaFKQ0PSCcZA9K8CIJNdhEHyXvt14bUtZB32NmnnPnMzz5l5PkuZAjDH82SbUIZAE2dvGYLrU3BypZBQWoDTwjWA8nI9sSgrq3vV3BTfBtHpNl1xslOIcnqSNEhK9AaMNZAeGLD9z5CN7RfMwI0ZCX25130IEZA3BgVG7piBKZBRpwBAlODRrw9KeHt5todIZD";
+  accessToken: string = "EAAQ1oGRqNv8BO1GqTaejivmMgErEhqGRZCzZC4SwVQDpmLg7cXMtZAKoY2enABR2Fu0VCwwfakoLjVZAr1gWVQ9cs6WNrzjZCdaniELL1Tf0b3W6Q5aB9cXsruSCoWnD8dWoBJV21rm18SudvH1c4Ui6J7q0jbNWa7rOjKi6Np70YR2s9xgRNeXfnZCcipAlq3vfyVcBoZBBmQ9TZCAaOK169gstFgelbHVkTHgZD";
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
   isWindowFocused: boolean = true; // Para rastrear si la ventana está activa
 
@@ -30,51 +30,19 @@ export class AppComponent implements OnInit {
   ngOnInit(): void {
     this.loadChats();
 
-    document.addEventListener('visibilitychange', () => {
-      this.isWindowFocused = !document.hidden; // Cambiar estado cuando la ventana se minimiza
-    });
+    if (Notification.permission !== 'granted') {
+      Notification.requestPermission();
+    }
+
+    window.addEventListener('focus', () => {this.isWindowFocused = true});
+    window.addEventListener('blur', () => {this.isWindowFocused = false});
 
     this.websocketService.getMessages().subscribe((msg) => {
+      console.log("mensaje recibido");
       if (this.currentChat && msg.recipient_phone === this.currentChat.phone) {
-        // Verificar si es necesario agregar un separador de fecha
-        const lastMessageDate = this.currentChat.messages.length > 0
-          ? new Date(this.currentChat.messages[this.currentChat.messages.length - 1].time).toLocaleDateString()
-          : null;
-        const newMessageDate = new Date(msg.time).toLocaleDateString();
-
-        // Agregar marcador de fecha si es necesario
-        if (lastMessageDate && newMessageDate !== lastMessageDate) {
-          console.log("Renderizando marcador de fecha...");
-          this.currentChat.messages.push({ type: 'date', text: this.formatMessageDate(msg.time) });
-        }
-
-        // Verificar si el mensaje tiene un archivo adjunto o es un mensaje de texto
-        let newMessage: any;
-        if (msg.media_id) {
-          console.log("Renderizando mensaje multimedia...");
-          newMessage = {
-            ...msg,
-            sender: 'received',
-            time: new Date(),
-            file_name: msg.file_name,
-            media_id: msg.media_id,
-            tipo_media: msg.tipo_media
-          };
-        } else {
-          console.log("Renderizando mensaje de texto...");
-          newMessage = {
-            ...msg,
-            sender: 'received',
-            time: new Date(),
-            text: msg.text
-          };
-        }
-
-        // Agregar el nuevo mensaje (texto o multimedia) al chat actual
-        this.currentChat.messages.push(newMessage);
-
-        // Hacer scroll hasta el fondo después de agregar el nuevo mensaje
-        this.scrollToBottom();
+        this.handleMessage(msg);
+      } else {
+        this.handleUnreadMessage(msg);
       }
     });
   }
@@ -86,6 +54,72 @@ export class AppComponent implements OnInit {
     }
   }
 
+  handleMessage(msg: any): void {
+    // Verificar si es necesario agregar un separador de fecha
+    const lastMessageDate = this.currentChat.messages.length > 0
+      ? new Date(this.currentChat.messages[this.currentChat.messages.length - 1].time).toLocaleDateString()
+      : null;
+    const newMessageDate = new Date(msg.time).toLocaleDateString();
+
+    if (lastMessageDate && newMessageDate !== lastMessageDate) {
+      this.currentChat.messages.push({ type: 'date', text: this.formatMessageDate(msg.time) });
+    }
+
+    let newMessage: any;
+    if (msg.media_id) {
+      newMessage = {
+        ...msg,
+        sender: 'received',
+        time: new Date(),
+        file_name: msg.file_name,
+        media_id: msg.media_id,
+        tipo_media: msg.tipo_media
+      };
+    } else {
+      newMessage = {
+        ...msg,
+        sender: 'received',
+        time: new Date(),
+        text: msg.text
+      };
+    }
+
+    this.currentChat.messages.push(newMessage);
+    this.scrollToBottom();
+    //Notificar si la ventana no está visible
+    console.log("Notificar mismo chat. Estado de ventana: ", this.isWindowFocused);
+    if (!this.isWindowFocused) {
+      this.showNotification(msg);
+    }
+  }
+
+  handleUnreadMessage(msg: any): void {
+    const chat = this.chats.find(c => c.phone === msg.recipient_phone);
+    if (chat) {
+      chat.unread = true;
+    }
+
+    console.log("Notificar. Estado de ventana: ", this.isWindowFocused);
+    if (!this.isWindowFocused) {
+      this.showNotification(msg);
+    }
+  }
+
+
+  showNotification(msg: any): void {
+    if (Notification.permission === 'granted') {
+      const notification = new Notification(`Nuevo mensaje de ${msg.contact}`, {
+        body: msg.text || 'Nuevo archivo adjunto recibido'
+      });
+  
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+    }
+  }  
+
+
   // Cargar la lista de chats
   loadChats(): void {
     this.messageService.getChats().subscribe((chats) => {
@@ -93,16 +127,19 @@ export class AppComponent implements OnInit {
     });
   }
 
-  // Cargar mensajes paginados
   loadMessages(phone: string): void {
-    this.currentPage = 1;  // Restablecer la página a 1 al seleccionar un nuevo chat
+    this.currentPage = 1;
+    const chat = this.chats.find(c => c.phone === phone);
+    if (chat) {
+      chat.unread = false; // Marcar como leído
+    }
+  
     this.messageService.getPaginatedMessages(phone, this.currentPage, this.limit).subscribe((messages) => {
       this.currentChat = { phone, messages: [] };
-      console.log("currentChat: ", this.currentChat);
       this.processMessagesWithDates(messages);
-      this.scrollToBottom();  // Asegurarse de que el scroll está abajo
+      this.scrollToBottom();
     });
-  }
+  }  
 
   // Prepend en lugar de push para mantener los mensajes en orden cronológico
   processMessagesWithDates(messages: any[]): void {
@@ -184,8 +221,8 @@ export class AppComponent implements OnInit {
         next: (response: any) => {
           // Si el mensaje se envía correctamente, actualizar el estado "enviando" a false
           const sentMessage = this.currentChat.messages.find((msg: {
-              text: string; phoneRecipiest: any; Phone_Number_ID: string; display_phone_number: string; accessToken: string; sender: string; time: Date; enviando: boolean; // Estado de "enviando"
-            }) => msg === tempMessage);
+            text: string; phoneRecipiest: any; Phone_Number_ID: string; display_phone_number: string; accessToken: string; sender: string; time: Date; enviando: boolean; // Estado de "enviando"
+          }) => msg === tempMessage);
           if (sentMessage) {
             sentMessage.enviando = false;  // Envío exitoso, eliminar el estado "enviando"
             sentMessage.time = new Date(); // Actualizar la hora de envío confirmada por el backend
@@ -194,8 +231,8 @@ export class AppComponent implements OnInit {
         error: (error: any) => {
           // Si el envío falla, marcar el mensaje como fallido
           const failedMessage = this.currentChat.messages.find((msg: {
-              text: string; phoneRecipiest: any; Phone_Number_ID: string; display_phone_number: string; accessToken: string; sender: string; time: Date; enviando: boolean; // Estado de "enviando"
-            }) => msg === tempMessage);
+            text: string; phoneRecipiest: any; Phone_Number_ID: string; display_phone_number: string; accessToken: string; sender: string; time: Date; enviando: boolean; // Estado de "enviando"
+          }) => msg === tempMessage);
           if (failedMessage) {
             failedMessage.enviando = false;
             failedMessage.failed = true;  // Marcar como "fallido"

@@ -5,11 +5,11 @@
       <h2>Chats</h2>
     </header>
     <ul id="chat-list">
-      <!-- Usar *ngFor para iterar sobre la lista de chats -->
-      <li *ngFor="let chat of chats" (click)="loadMessages(chat.phone)">
-        {{ chat.name }} ({{ chat.phone }})
+      <li *ngFor="let chat of chats" [class.unread]="chat.unread" (click)="loadMessages(chat.phone)">
+        <span>{{ chat.name }} ({{ chat.phone }})</span>
+        <span *ngIf="chat.unread" class="unread-indicator">•</span>
       </li>
-    </ul>
+    </ul>    
   </div>
 
   <!-- Ventana del chat seleccionado -->

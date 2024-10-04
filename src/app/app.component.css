@@ -26,10 +26,25 @@ header {
     padding: 1em;
     border-bottom: 1px solid #ddd;
     cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#chat-list li.unread {
+    font-weight: bold;
+    background-color: #e0e0e0;
 }
 
 #chat-list li:hover {
     background-color: #e0e0e0;
+}
+
+/* Indicador de mensaje no leído */
+.unread-indicator {
+    color: red;
+    font-size: 1.5em;
+    margin-left: 10px;
 }
 
 #messages {
