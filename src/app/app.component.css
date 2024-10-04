@@ -173,3 +173,16 @@ footer {
     position: relative;
     display: inline-block;
 }
+
+.sending-spinner {
+    display: flex;
+    align-items: center;
+    color: #999;
+    font-size: 12px;
+}
+
+.error-icon {
+    color: red;
+    font-size: 16px;
+    margin-left: 10px;
+}

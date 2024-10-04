@@ -18,9 +18,9 @@ export class AppComponent implements OnInit {
   currentChat: any = null;
   currentPage: number = 1;
   limit: number = 20;
-  accessToken: string = "EAAQ1oGRqNv8BO01iKA18IyHPzIhkZBgLKmaBoqrLK8ZAF292F0dOna5uURvftPK1nC8ysVxKFUjSu3Hnec6F9EhgVSYlH45z2ZAB376kJF3RQZAG04GVHgYDNJOavF4FApmWilV1Qtwb7ECxVAaLb8leyVQ6pHcTxCXjUT4G3ZApnkLI9vWt8SE4jZBQhinFNEMaEessoCJPoU5AEStak57LnWTVdsgNf10nQZD";
-
+  accessToken: string = "EAAQ1oGRqNv8BO9ZAS8LU75d5mHNu6Tj9wizDMZBty4SaFKQ0PSCcZA9K8CIJNdhEHyXvt14bUtZB32NmnnPnMzz5l5PkuZAjDH82SbUIZAE2dvGYLrU3BypZBQWoDTwjWA8nI9sSgrq3vV3BTfBtHpNl1xslOIcnqSNEhK9AaMNZAeGLD9z5CN7RfMwI0ZCX25130IEZA3BgVG7piBKZBRpwBAlODRrw9KeHt5todIZD";
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
+  isWindowFocused: boolean = true; // Para rastrear si la ventana está activa
 
   constructor(
     private websocketService: WebsocketService,
@@ -29,8 +29,11 @@ export class AppComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadChats();
-    this.websocketService.connect();
-  
+
+    document.addEventListener('visibilitychange', () => {
+      this.isWindowFocused = !document.hidden; // Cambiar estado cuando la ventana se minimiza
+    });
+
     this.websocketService.getMessages().subscribe((msg) => {
       if (this.currentChat && msg.recipient_phone === this.currentChat.phone) {
         // Verificar si es necesario agregar un separador de fecha
@@ -38,13 +41,13 @@ export class AppComponent implements OnInit {
           ? new Date(this.currentChat.messages[this.currentChat.messages.length - 1].time).toLocaleDateString()
           : null;
         const newMessageDate = new Date(msg.time).toLocaleDateString();
-  
+
         // Agregar marcador de fecha si es necesario
         if (lastMessageDate && newMessageDate !== lastMessageDate) {
           console.log("Renderizando marcador de fecha...");
           this.currentChat.messages.push({ type: 'date', text: this.formatMessageDate(msg.time) });
         }
-  
+
         // Verificar si el mensaje tiene un archivo adjunto o es un mensaje de texto
         let newMessage: any;
         if (msg.media_id) {
@@ -66,18 +69,15 @@ export class AppComponent implements OnInit {
             text: msg.text
           };
         }
-  
+
         // Agregar el nuevo mensaje (texto o multimedia) al chat actual
         this.currentChat.messages.push(newMessage);
-  
+
         // Hacer scroll hasta el fondo después de agregar el nuevo mensaje
         this.scrollToBottom();
       }
     });
   }
-  
-
-
 
   onScroll(): void {
     const element = this.messagesContainer.nativeElement;
@@ -153,26 +153,59 @@ export class AppComponent implements OnInit {
   // Método para enviar un mensaje
   sendMessage(messageText: string): void {
     console.log("Enviando mensaje...");
+
     if (this.selectedFile) {
+      // Si hay un archivo adjunto
       console.log("Archivo adjunto");
       this.sendFile(this.selectedFile, this.currentChat.phone);  // Enviar archivo adjunto
+
     } else if (this.currentChat && messageText.trim()) {
+      // Si es un mensaje de texto
       console.log("Mensaje de texto");
-      const message = {
+
+      // Crear un mensaje temporal con estado "enviando"
+      const tempMessage = {
         text: messageText,
         phoneRecipiest: this.currentChat.phone,
         Phone_Number_ID: "311617238711471",
         display_phone_number: "15556242830",
-        accessToken: this.accessToken
+        accessToken: this.accessToken,
+        sender: 'sent',
+        time: new Date(),
+        enviando: true // Estado de "enviando"
       };
-      this.messageService.sendMessage(message).subscribe((response) => {
-        this.currentChat.messages.push({
-          ...message,
-          sender: 'sent',
-          time: new Date()
-        });
-        this.scrollToBottom();
-      });
+
+      // Agregar el mensaje temporal a la lista de mensajes
+      this.currentChat.messages.push(tempMessage);
+      this.scrollToBottom();
+
+      // Crear un observer para manejar el éxito y el error
+      const observer = {
+        next: (response: any) => {
+          // Si el mensaje se envía correctamente, actualizar el estado "enviando" a false
+          const sentMessage = this.currentChat.messages.find((msg: {
+              text: string; phoneRecipiest: any; Phone_Number_ID: string; display_phone_number: string; accessToken: string; sender: string; time: Date; enviando: boolean; // Estado de "enviando"
+            }) => msg === tempMessage);
+          if (sentMessage) {
+            sentMessage.enviando = false;  // Envío exitoso, eliminar el estado "enviando"
+            sentMessage.time = new Date(); // Actualizar la hora de envío confirmada por el backend
+          }
+        },
+        error: (error: any) => {
+          // Si el envío falla, marcar el mensaje como fallido
+          const failedMessage = this.currentChat.messages.find((msg: {
+              text: string; phoneRecipiest: any; Phone_Number_ID: string; display_phone_number: string; accessToken: string; sender: string; time: Date; enviando: boolean; // Estado de "enviando"
+            }) => msg === tempMessage);
+          if (failedMessage) {
+            failedMessage.enviando = false;
+            failedMessage.failed = true;  // Marcar como "fallido"
+          }
+          console.error("Error al enviar el mensaje:", error);
+        }
+      };
+
+      // Enviar el mensaje al backend usando el observer
+      this.messageService.sendMessage(tempMessage).subscribe(observer);
     }
   }
 
@@ -250,5 +283,5 @@ export class AppComponent implements OnInit {
       })
       .catch((error) => console.error('Error al descargar el archivo:', error));
   }
-  
+
 }
