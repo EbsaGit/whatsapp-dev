@@ -35,4 +35,9 @@ export class MessageService {
     return this.http.post<any>(`${this.apiFileUrl}/upload-file/311617238711471/${phoneRecipient}`, formData, {headers});
   }
 
+  //Marca el chat como leido
+  markChatAsRead(phone: string): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/chats/mark-as-read/${phone}`, {});
+  }
+
 }

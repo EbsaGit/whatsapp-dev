@@ -28,7 +28,8 @@ header {
     cursor: pointer;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: start;
+    flex-direction: column;
 }
 
 #chat-list li.unread {
@@ -46,6 +47,27 @@ header {
     font-size: 1.5em;
     margin-left: 10px;
 }
+
+.last-message {
+    display: flex;
+    justify-content: space-between;
+    color: gray;
+    font-size: 0.85em;
+    width: 100%;
+}
+
+.last-message-text {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.last-message-time {
+    margin-left: auto;
+    font-size: 0.80em;
+}
+
 
 #messages {
     flex: 1;

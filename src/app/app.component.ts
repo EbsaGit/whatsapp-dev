@@ -18,9 +18,9 @@ export class AppComponent implements OnInit {
   currentChat: any = null;
   currentPage: number = 1;
   limit: number = 20;
-  accessToken: string = "EAAQ1oGRqNv8BO1GqTaejivmMgErEhqGRZCzZC4SwVQDpmLg7cXMtZAKoY2enABR2Fu0VCwwfakoLjVZAr1gWVQ9cs6WNrzjZCdaniELL1Tf0b3W6Q5aB9cXsruSCoWnD8dWoBJV21rm18SudvH1c4Ui6J7q0jbNWa7rOjKi6Np70YR2s9xgRNeXfnZCcipAlq3vfyVcBoZBBmQ9TZCAaOK169gstFgelbHVkTHgZD";
+  accessToken: string = "EAAQ1oGRqNv8BO0YHaRZAas2fiIoMOVpdaYP4H1Ddk0ekX8ZBvnyCzWOc3eHlXoArjqwELPRiYIidIKYVc51FEcuxiN1HemafHAoRuHCdlmrgNODZAFqJBszAU4HiOo0lY9lnn6kHIcc27j2oZAwjft7LyNoxfPUuvdownjmgpIf9LALkvGoJ5HDWHQEgHozXFrEgbhsFwNuHUmw3LTHZC6TBXsThgVQ6b6Q8ZD";
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
-  isWindowFocused: boolean = true; // Para rastrear si la ventana está activa
+  isWindowFocused: boolean = false; // Para rastrear si la ventana está activa
 
   constructor(
     private websocketService: WebsocketService,
@@ -39,9 +39,13 @@ export class AppComponent implements OnInit {
 
     this.websocketService.getMessages().subscribe((msg) => {
       console.log("mensaje recibido");
-      if (this.currentChat && msg.recipient_phone === this.currentChat.phone) {
+      this.loadChats();
+      if (this.currentChat && msg.recipient_phone === this.currentChat.phone) 
+      {
         this.handleMessage(msg);
-      } else {
+      } 
+      else 
+      {
         this.handleUnreadMessage(msg);
       }
     });
@@ -94,11 +98,6 @@ export class AppComponent implements OnInit {
   }
 
   handleUnreadMessage(msg: any): void {
-    const chat = this.chats.find(c => c.phone === msg.recipient_phone);
-    if (chat) {
-      chat.unread = true;
-    }
-
     console.log("Notificar. Estado de ventana: ", this.isWindowFocused);
     if (!this.isWindowFocused) {
       this.showNotification(msg);
@@ -119,23 +118,30 @@ export class AppComponent implements OnInit {
     }
   }  
 
-
-  // Cargar la lista de chats
+  //Carga de chats
   loadChats(): void {
     this.messageService.getChats().subscribe((chats) => {
-      this.chats = chats;
+      // Para cada chat, obtén su último mensaje y la hora
+      this.chats = chats.map(chat => ({
+        ...chat,
+        lastMessageText: chat.messages?.length ? chat.messages[chat.messages.length - 1].text : 'Sin mensajes',
+        lastMessageTime: chat.messages?.length ? chat.messages[chat.messages.length - 1].time : null
+      }));
     });
   }
 
-  loadMessages(phone: string): void {
+  loadMessages(phone: string, unreadMessages: boolean): void {
     this.currentPage = 1;
     const chat = this.chats.find(c => c.phone === phone);
-    if (chat) {
-      chat.unread = false; // Marcar como leído
+    if (unreadMessages) {
+      console.log("Marcando como leido al abrir chat...");
+      this.messageService.markChatAsRead(phone).subscribe(() => {
+        chat.unreadMessages = false;
+      });
     }
   
     this.messageService.getPaginatedMessages(phone, this.currentPage, this.limit).subscribe((messages) => {
-      this.currentChat = { phone, messages: [] };
+      this.currentChat = { phone, messages: [], unreadMessages: unreadMessages };
       this.processMessagesWithDates(messages);
       this.scrollToBottom();
     });
@@ -319,6 +325,20 @@ export class AppComponent implements OnInit {
         window.URL.revokeObjectURL(url);
       })
       .catch((error) => console.error('Error al descargar el archivo:', error));
+  }
+
+  markChatAsRead(phone: string): void {
+    console.log("Procesando...", phone);
+    const chat = this.chats.find(c => c.phone === phone);
+    if (chat) {
+      console.log("Encontró chat con unreadMessages", chat.unreadMessages);
+      if (chat.unreadMessages) {
+        this.messageService.markChatAsRead(phone).subscribe(() => {
+          chat.unreadMessages = false;
+          console.log("Marcado como leido");
+        });
+      }
+    }
   }
 
 }

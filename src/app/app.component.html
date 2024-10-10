@@ -5,9 +5,15 @@
       <h2>Chats</h2>
     </header>
     <ul id="chat-list">
-      <li *ngFor="let chat of chats" [class.unread]="chat.unread" (click)="loadMessages(chat.phone)">
+      <li *ngFor="let chat of chats" [class.unread]="chat.unreadMessages" (click)="loadMessages(chat.phone, chat.unreadMessages)">
+        <div>
         <span>{{ chat.name }} ({{ chat.phone }})</span>
-        <span *ngIf="chat.unread" class="unread-indicator">•</span>
+        <span *ngIf="chat.unreadMessages" class="unread-indicator">●</span>
+      </div>
+        <div class="last-message">
+          <span class="last-message-text">{{ chat.lastMessageText }}</span>
+          <span class="last-message-time">{{ chat.lastMessageTime | date:'shortTime' }}</span>
+        </div>
       </li>
     </ul>    
   </div>
@@ -82,7 +88,7 @@
 
     <!-- Pie de página con el input de mensaje -->
     <footer>
-      <input type="text" id="message-input" #messageInput placeholder="Escribe un mensaje"
+      <input (focus)="markChatAsRead(currentChat.phone)" type="text" id="message-input" #messageInput placeholder="Escribe un mensaje"
         (keydown.enter)="sendMessage(messageInput.value); messageInput.value=''">
       <input type="file" id="file-input" (change)="onFileSelected($event)" #fileInput style="display: none;">
       <button id="file-button" (click)="fileInput.click()">Adjuntar</button>
