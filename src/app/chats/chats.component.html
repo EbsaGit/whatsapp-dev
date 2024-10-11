@@ -1,0 +1,107 @@
+<div id="app">
+    <!-- Sidebar con la lista de chats -->
+    <div id="sidebar">
+        <header>
+            <h2>Chats</h2>
+        </header>
+        <ul id="chat-list">
+            <li *ngFor="let chat of chats" [class.unread]="chat.unreadMessages"
+                (click)="loadMessages(chat.phone, chat.unreadMessages)">
+                <div>
+                    <span>{{ chat.name }} ({{ chat.phone }})</span>
+                    <span *ngIf="chat.unreadMessages" class="unread-indicator">●</span>
+                </div>
+                <div class="last-message">
+                    <span class="last-message-text">{{ chat.lastMessageText }}</span>
+                    <span class="last-message-time">{{ chat.lastMessageTime | date:'shortTime' }}</span>
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Ventana del chat seleccionado -->
+    <div id="chat-window" *ngIf="currentChat">
+        <header id="chat-header">
+            <h2 id="chat-title">{{ currentChat.phone }}</h2>
+        </header>
+        <div id="messages" #messagesContainer (scroll)="onScroll()">
+            <!-- Iterar sobre los mensajes, que ahora incluye mensajes y separadores de fecha -->
+            <ng-container *ngFor="let msg of currentChat?.messages">
+
+                <!-- Separador de fecha -->
+                <div *ngIf="msg.type === 'date'" class="date-marker">
+                    {{ msg.text }}
+                </div>
+
+                <!-- Si el mensaje es un mensaje regular -->
+                <div *ngIf="msg.type !== 'date'" class="message" [class.sent]="msg.sender === 'sent'"
+                    [class.received]="msg.sender === 'received'">
+
+                    <!-- Mostrar spinner mientras se está enviando -->
+                    <div *ngIf="msg.enviando" class="sending-spinner">
+                        <span>Enviando...</span>
+                    </div>
+
+                    <!-- Mensaje de texto -->
+                    <span *ngIf="msg.text && !msg.enviando">{{ msg.text }}</span>
+
+                    <!-- Archivo multimedia -->
+                    <div *ngIf="msg.media_id && !msg.enviando" class="media-container"
+                        style="position: relative; display: inline-block;">
+                        <!-- Imagen -->
+                        <img *ngIf="msg.tipo_media === 'image'"
+                            [src]="'https://devtechpy.com/api/proxy-image/' + msg.media_id + '?access_token=' + accessToken"
+                            style="max-width: 200px; display: block;">
+                        <!-- Documento -->
+                        <img *ngIf="msg.tipo_media === 'document'"
+                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSCO1jeo4Y-_tTWepOOx6v_x2abX5tUkFsmRvzIqukffC3G2TXjehKt5gQlq92BFoqgKJc&usqp=CAU"
+                            style="max-width: 200px; display: block;">
+
+                        <p>{{ msg.file_name?.length < 17 ? msg.file_name : msg.file_name.substring(0, 17) + '...' }}</p>
+
+                                <button class="download-button" style="position: absolute; top: 5px; right: 5px;"
+                                    (click)="downloadFile(msg.media_id, msg.file_name)">
+                                    <svg id="download-svg" xmlns="http://www.w3.org/2000/svg" fill="black"
+                                        viewBox="0 0 24 24" width="24px" height="24px">
+                                        <path d="M0 0h24v24H0z" fill="none" />
+                                        <path
+                                            d="M5 20h14v-2H5v2zM12 3v10.55l3.29-3.29 1.41 1.41L12 17.59l-4.71-4.71 1.41-1.41L11 13.55V3h2z" />
+                                    </svg>
+                                </button>
+
+                                <div class="message-time-file">{{ msg.time | date:'shortTime' }}</div>
+                    </div>
+
+                    <!-- Mostrar ícono de error si el envío falló -->
+                    <div *ngIf="msg.failed" class="error-icon">
+                        ⚠️
+                    </div>
+
+                    <!-- Hora del mensaje si ya fue enviado correctamente -->
+                    <div *ngIf="!msg.enviando && msg.text" class="message-time">{{ msg.time | date:'shortTime' }}</div>
+
+                </div>
+
+            </ng-container>
+        </div>
+
+
+
+        <!-- Pie de página con el input de mensaje -->
+        <footer>
+            <input (focus)="markChatAsRead(currentChat.phone)" type="text" id="message-input" #messageInput
+                placeholder="Escribe un mensaje"
+                (keydown.enter)="sendMessage(messageInput.value); messageInput.value=''">
+            <input type="file" id="file-input" (change)="onFileSelected($event)" #fileInput style="display: none;">
+            <button id="file-button" (click)="fileInput.click()">Adjuntar</button>
+            <button id="send-button" (click)="sendMessage(messageInput.value); messageInput.value=''">Enviar</button>
+        </footer>
+    </div>
+
+    <!-- Si no hay un chat seleccionado, mostrar este mensaje -->
+    <div id="chat-window" *ngIf="!currentChat">
+        <header id="chat-header">
+            <h2 id="chat-title">Selecciona un chat</h2>
+        </header>
+    </div>
+</div>

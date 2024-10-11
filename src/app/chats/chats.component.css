@@ -1,0 +1,225 @@
+#sidebar {
+    width: 25%;
+    background-color: #f0f0f0;
+    border-right: 1px solid #ddd;
+}
+
+#chat-window {
+    width: 75%;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    padding: 1em;
+    background-color: #075E54;
+    color: white;
+}
+
+#chat-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#chat-list li {
+    padding: 1em;
+    border-bottom: 1px solid #ddd;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    flex-direction: column;
+}
+
+#chat-list li.unread {
+    font-weight: bold;
+    background-color: #e0e0e0;
+}
+
+#chat-list li:hover {
+    background-color: #e0e0e0;
+}
+
+/* Indicador de mensaje no leído */
+.unread-indicator {
+    color: red;
+    font-size: 1.5em;
+    margin-left: 10px;
+}
+
+.last-message {
+    display: flex;
+    justify-content: space-between;
+    color: gray;
+    font-size: 0.85em;
+    width: 100%;
+}
+
+.last-message-text {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.last-message-time {
+    margin-left: auto;
+    font-size: 0.80em;
+}
+
+
+#messages {
+    flex: 1;
+    padding: 1em;
+    overflow-y: auto;
+    background-color: #e5ddd5;
+    display: flex;
+    flex-direction: column;
+}
+
+.message {
+    margin: 0.5em 0;
+    padding: 0.5em;
+    border-radius: 5px;
+    max-width: 60%;
+}
+
+.message.sent {
+    background-color: #dcf8c6;
+    align-self: flex-end;
+    text-align: right;
+    position: relative;
+}
+
+.message.received {
+    background-color: #fff;
+    align-self: flex-start;
+    text-align: left;
+    position: relative;
+}
+
+/* Contenedor de texto del mensaje */
+.message-text-container {
+    display: inline-block;
+    position: relative;
+    padding: 5px 10px;
+    border-radius: 15px;
+    background-color: #dcf8c6;
+    max-width: 100%;
+    word-wrap: break-word;
+}
+
+/* Estilo de la hora del mensaje */
+.message-time {
+    display: inline-block;
+    font-size: 0.75rem;
+    color: #999;
+    margin-left: 10px;
+    vertical-align: bottom;
+    position: relative;
+    top: 2px;
+}
+
+.message-time-file {
+    display: inline-block;
+    font-size: 0.75rem;
+    color: #999;
+    margin-left: 10px;
+    vertical-align: bottom;
+    position: absolute;
+    bottom: 0.6em;
+    right: 0.6em;
+}
+
+.message.sent .message-text-container {
+    background-color: #dcf8c6;
+    align-self: flex-end;
+    text-align: right;
+}
+
+.message.received .message-text-container {
+    background-color: #fff;
+    align-self: flex-start;
+    text-align: left;
+}
+
+footer {
+    display: flex;
+    padding: 1em;
+    background-color: #fff;
+    border-top: 1px solid #ddd;
+}
+
+#message-input {
+    flex: 1;
+    padding: 0.5em;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-right: 0.5em;
+}
+
+#send-button {
+    padding: 0.5em 1em;
+    background-color: #075E54;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#file-button {
+    padding: 0.5em 1em;
+    background-color: #075E54;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.date-marker {
+    text-align: center;
+    margin: 10px 0;
+    font-weight: bold;
+    color: gray;
+}
+
+.download-button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border: none;
+    border-radius: 50%;
+    padding: 5px;
+    cursor: pointer;
+}
+
+.download-button svg {
+    fill: white;
+    width: 20px;
+    height: 20px;
+}
+
+.download-button:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.img-container {
+    position: relative;
+    display: inline-block;
+}
+
+.sending-spinner {
+    display: flex;
+    align-items: center;
+    color: #999;
+    font-size: 12px;
+}
+
+.error-icon {
+    color: red;
+    font-size: 16px;
+    margin-left: 10px;
+}
